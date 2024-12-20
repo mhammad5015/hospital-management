@@ -14,8 +14,7 @@ app.use(express.static(path.join(__dirname, "public"))); // to access the public
 app.use(cors(corsOptions));
 app.use(rateLimiter);
 
-app.use("/", (req, res) => {
-  res.render('index.ejs');
-});
+const routes = require("./routes/routes");
+app.use(routes);
 
 app.listen(port, "localhost", () => console.log("listening on port " + port));
