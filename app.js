@@ -5,6 +5,7 @@ const sequelize = require("./util/database");
 const corsOptions = require("./config/corsOptions");
 const cors = require("cors");
 const rateLimiter = require("./middlewares/rateLimiter");
+const globalErrorHandler = require("./controllers/errorController");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,8 +14,12 @@ app.use(bodyParser.json()); // basically tells the system that you want json to 
 app.use(express.static(path.join(__dirname, "public"))); // to access the public folder from any where in the application
 app.use(cors(corsOptions));
 app.use(rateLimiter);
+app.set("view engine", "ejs");
+app.set("views", "views");
 
 const routes = require("./routes/routes");
 app.use(routes);
+
+app.use(globalErrorHandler);
 
 app.listen(port, "localhost", () => console.log("listening on port " + port));
