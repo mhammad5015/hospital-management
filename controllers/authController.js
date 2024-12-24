@@ -8,7 +8,7 @@ exports.getRegister = async (req, res, next) => {
 };
 
 exports.postRegister = async (req, res, next) => {
-  const {
+  let {
     userName,
     password,
     nationalNumber,
@@ -18,6 +18,11 @@ exports.postRegister = async (req, res, next) => {
     residence,
     isDoctor,
   } = req.body;
+  if (isDoctor !== true) {
+    isDoctor = false;
+  } else {
+    isDoctor = true;
+  }
   try {
     const hashedPass = await bcrypt.hash(password, 12);
     let userData = {
@@ -28,7 +33,7 @@ exports.postRegister = async (req, res, next) => {
       job: job,
       phoneNum: phoneNum,
       residence: residence,
-      isDoctor: !!isDoctor == true ? true : false,
+      isDoctor: isDoctor,
     };
     const user = await models.User.create(userData);
     let token = jwt.sign(

@@ -12,17 +12,9 @@ router.get("/", isUser, (req, res) => {
 });
 
 router.get("/register", authController.getRegister);
-router.post(
-  "/register",
-  authValidation.userRegisterValidation,
-  authController.postRegister
-);
+router.post("/register", authValidation.userRegisterValidation, authController.postRegister);
 
 router.get("/login", authController.getLogin);
-router.post(
-  "/login",
-  authValidation.userLoginValidation,
-  authController.postLogin
-);
+router.post("/login", authValidation.userLoginValidation, authController.postLogin);
 
 module.exports = router;

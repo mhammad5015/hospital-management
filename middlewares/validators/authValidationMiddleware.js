@@ -39,7 +39,6 @@ const userRegisterValidation = [
   check("job", "job field is required").trim().notEmpty(),
   check("phoneNum", "phoneNum field is required").trim().notEmpty(),
   check("residence", "residence field is required").trim().notEmpty(),
-  check("isDoctor", "isDoctor field is required").trim().notEmpty(),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
