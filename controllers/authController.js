@@ -3,6 +3,13 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const CustomError = require("../util/CustomError");
 
+exports.getHome = (req, res) => {
+  res.render("index", {
+    title: "Home",
+    user: req.user,
+  });
+}
+
 exports.getRegister = async (req, res, next) => {
   res.render("register.ejs", { title: "Register" });
 };
@@ -36,15 +43,8 @@ exports.postRegister = async (req, res, next) => {
       isDoctor: isDoctor,
     };
     const user = await models.User.create(userData);
-    let token = jwt.sign(
-      { id: user.id, userName: user.userName },
-      process.env.JWT_SECRET_KEY,
-      { expiresIn: "1h" }
-    );
-    res.json({
+    res.render("login", {
       message: "user created successfully",
-      data: user,
-      token: token,
     });
   } catch (err) {
     next(err);
@@ -74,12 +74,28 @@ exports.postLogin = async (req, res, next) => {
     let token = await jwt.sign(payload, process.env.JWT_SECRET_KEY, {
       expiresIn: "1h",
     });
-    return res.status(200).json({
-      message: "User logged in successfully",
-      data: user,
-      token: token,
+    // Set the token in a cookie for authentication
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
     });
+    // Redirect to the homepage
+    return res.redirect("/");
   } catch (err) {
     next(err);
   }
 };
+
+exports.getLogout = (req, res) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+    res.redirect("/login");
+  } catch (err) {
+    next(err);
+  }
+}

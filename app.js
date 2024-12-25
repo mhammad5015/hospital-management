@@ -6,6 +6,7 @@ const corsOptions = require("./config/corsOptions");
 const cors = require("cors");
 const rateLimiter = require("./middlewares/rateLimiter");
 const globalErrorHandler = require("./controllers/errorController");
+const cookieParser = require("cookie-parser");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -16,6 +17,7 @@ app.use(cors(corsOptions));
 app.use(rateLimiter);
 app.set("view engine", "ejs");
 app.set("views", "views");
+app.use(cookieParser());
 
 const routes = require("./routes/routes");
 app.use(routes);
