@@ -1,28 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
+const authValidation = require("../middlewares/validators/authValidationMiddleware");
+const isUser = require("../middlewares/Authentication/userAuthMiddleware");
 
-// routes:
-// Routes
-router.get("/", (req, res) => {
-//   if (!isAuthenticated) {
-//     return res.redirect("/login");
-//   }
-  res.render("index.ejs", { title: "Home" });
-});
+router.get("/", isUser, authController.getHome);
 
-router.get("/register", (req, res) => {
-  res.render("register.ejs", { title: "Register" });
-});
-router.post("/register", (req, res) => {
-  res.redirect("index.ejs");
-});
+router.get("/register", authController.getRegister);
+router.post("/register", authValidation.userRegisterValidation, authController.postRegister);
 
-router.get("/login", (req, res) => {
-  res.render("login.ejs", { title: "Login" });
-});
-router.post("/login", (req, res) => {
-  res.redirect("index.ejs");
-});
+router.get("/login", authController.getLogin);
+router.post("/login", authValidation.userLoginValidation, authController.postLogin);
+
+router.get("/logout", authController.getLogout);
 
 module.exports = router;
