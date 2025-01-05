@@ -10,17 +10,21 @@ module.exports = (req, res, next) => {
     }
 
     jwt.verify(token, process.env.JWT_SECRET_KEY, async (error, user) => {
-      if (error) {
-        throw new CustomError("Invalid or expired token. Access is forbidden.", 403);
+      try {
+        if (error) {
+          throw new CustomError("Invalid or expired token. Access is forbidden.", 403);
+        }
+        const isUser = await models.User.findOne({
+          where: { id: user.id, userName: user.userName },
+        });
+        if (!isUser) {
+          throw new CustomError("Invalid token. Access is forbidden.", 403);
+        }
+        req.user = user;
+        next();
+      } catch (err) {
+        next(err);
       }
-      const isUser = await models.User.findOne({
-        where: { id: user.id, userName: user.userName },
-      });
-      if (!isUser) {
-        throw new CustomError("Invalid token. Access is forbidden.", 403);
-      }
-      req.user = user;
-      next();
     });
   } catch (err) {
     next(err);
