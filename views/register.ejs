@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/stylesheets/register.css">
   <title>Hospital Management | Home</title>
   <script>
     // validation for password confirmation
@@ -22,49 +23,57 @@
 <body>
   <h1>user register</h1>
   <form action="/register" method="post">
-    <label for="userName">Username:</label>
+    <label for="userName">Username</label>
     <input type="text" id="userName" name="userName" placeholder="Enter your username" required>
-    <br><br>
 
-    <label for="password">Password:</label>
+    <label for="password">Password</label>
     <input type="password" id="password" name="password" placeholder="Enter your password" required value="1234">
-    <br><br>
 
-    <label for="confirmPassword">Confirm Password:</label>
+    <label for="confirmPassword">Confirm Password</label>
     <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter your password" required
       value="1234">
-    <br><br>
 
-    <label for="nationalNumber">National Number:</label>
+    <label for="nationalNumber">National Number</label>
     <input type="text" id="nationalNumber" name="nationalNumber" placeholder="Enter your national number" required
       value="4792837239847">
-    <br><br>
 
-    <label for="age">Age:</label>
+    <label for="age">Age</label>
     <input type="number" id="age" name="age" placeholder="Enter your age" required value="22">
-    <br><br>
 
-    <label for="job">Job:</label>
+    <label for="job">Job</label>
     <input type="text" id="job" name="job" placeholder="Enter your job title" required value="eng">
-    <br><br>
 
-    <label for="phoneNum">Phone Number:</label>
+    <label for="phoneNum">Phone Number</label>
     <input type="tel" id="phoneNum" name="phoneNum" placeholder="Enter your phone number" required
       value="+963968652712">
-    <br><br>
 
-    <label for="residence">Residence:</label>
+    <label for="residence">Residence</label>
     <input type="text" id="residence" name="residence" placeholder="Enter your city or address" required value="Damas">
-    <br><br>
 
-    <label for="isDoctor">Are you a doctor?</label>
+    <label for="isDoctor" id="isDoctors">Are you a doctor?</label>
     <input type="checkbox" id="isDoctor" name="isDoctor" value="true">
-    <br><br>
+
+    <div id="doctorSpeciality" style="display: none;">
+      <label for="speciality">Doctor Speciality</label>
+      <input type="text" id="speciality" name="speciality" placeholder="Enter your speciality">
+    </div>
 
     <button type="submit">Register</button>
+    <p>Already have an account? <a href="/login">Login here</a></p>
   </form>
-  <br>
-  <p>Already have an account? <a href="/login">Login here</a></p>
+
+  <script>
+    const isDoctorCheckbox = document.getElementById('isDoctor');
+    const doctorSpecialityDiv = document.getElementById('doctorSpeciality');
+
+    isDoctorCheckbox.addEventListener('change', () => {
+      if (isDoctorCheckbox.checked) {
+        doctorSpecialityDiv.style.display = 'block';
+      } else {
+        doctorSpecialityDiv.style.display = 'none';
+      }
+    });
+  </script>
 </body>
 
 </html>
