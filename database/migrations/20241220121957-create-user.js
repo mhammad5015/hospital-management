@@ -46,7 +46,7 @@ module.exports = {
         type: Sequelize.BOOLEAN,
         allowNull: false,
       },
-      specialization: {
+      speciality: {
         type: Sequelize.STRING,
       },
       createdAt: {

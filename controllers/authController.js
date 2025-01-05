@@ -24,9 +24,11 @@ exports.postRegister = async (req, res, next) => {
     phoneNum,
     residence,
     isDoctor,
+    speciality,
   } = req.body;
-  if (isDoctor !== true) {
+  if (isDoctor == undefined) {
     isDoctor = false;
+    speciality = null
   } else {
     isDoctor = true;
   }
@@ -41,6 +43,7 @@ exports.postRegister = async (req, res, next) => {
       phoneNum: phoneNum,
       residence: residence,
       isDoctor: isDoctor,
+      speciality: speciality
     };
     const user = await models.User.create(userData);
     res.render("login", {
