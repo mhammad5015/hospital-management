@@ -24,4 +24,17 @@ app.use(routes);
 
 app.use(globalErrorHandler);
 
-app.listen(port, "localhost", () => console.log("listening on port " + port));
+server = app.listen(port, "localhost", () => console.log("listening on port " + port));
+// socket.io implementation:
+const io = require("./socket").init(server);
+io.on("connection", socket => {
+    console.log("A client connected");
+
+    socket.on("message", (data) => {
+        console.log(data.text);
+        socket.emit("encriptedMessage", { "message": data.text });
+    });
+    socket.on("disconnect", () => {
+        console.log("Client disconnected");
+    });
+});
