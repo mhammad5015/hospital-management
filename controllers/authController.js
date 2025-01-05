@@ -3,11 +3,20 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const CustomError = require("../util/CustomError");
 
-exports.getHome = (req, res) => {
-  res.render("index", {
-    title: "Home",
-    user: req.user,
-  });
+exports.getHome = async (req, res) => {
+  let user = await models.User.findOne({ where: { userName: req.user.userName } })
+
+  if (user.isDoctor == true) {
+    res.render("indexDoctor", {
+      title: "Home",
+      user: req.user,
+    });
+  } else {
+    res.render("indexPatient", {
+      title: "Home",
+      user: req.user,
+    });
+  }
 }
 
 exports.getRegister = async (req, res, next) => {
