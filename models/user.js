@@ -21,7 +21,8 @@ module.exports = (sequelize, DataTypes) => {
     job: DataTypes.STRING,
     phoneNum: DataTypes.STRING,
     residence: DataTypes.STRING,
-    isDoctor: DataTypes.BOOLEAN
+    isDoctor: DataTypes.BOOLEAN,
+    speciality: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'User',

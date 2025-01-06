@@ -3,11 +3,20 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const CustomError = require("../util/CustomError");
 
-exports.getHome = (req, res) => {
-  res.render("index", {
-    title: "Home",
-    user: req.user,
-  });
+exports.getHome = async (req, res) => {
+  let user = await models.User.findOne({ where: { userName: req.user.userName } })
+
+  if (user.isDoctor == true) {
+    res.render("indexDoctor", {
+      title: "Home",
+      user: req.user,
+    });
+  } else {
+    res.render("indexPatient", {
+      title: "Home",
+      user: req.user,
+    });
+  }
 }
 
 exports.getRegister = async (req, res, next) => {
@@ -24,9 +33,11 @@ exports.postRegister = async (req, res, next) => {
     phoneNum,
     residence,
     isDoctor,
+    speciality,
   } = req.body;
-  if (isDoctor !== true) {
+  if (isDoctor == undefined) {
     isDoctor = false;
+    speciality = null
   } else {
     isDoctor = true;
   }
@@ -41,6 +52,7 @@ exports.postRegister = async (req, res, next) => {
       phoneNum: phoneNum,
       residence: residence,
       isDoctor: isDoctor,
+      speciality: speciality
     };
     const user = await models.User.create(userData);
     res.render("login", {
