@@ -8,8 +8,24 @@
 </head>
 
 <body>
-  <h1>patient home page</h1>
-  <p><a href="/logout">Logout</a></p>
+  <header>
+    <h1>patient home page</h1>
+    <p><a href="/logout">Logout</a></p>
+  </header>
+  <br>
+
+  <div class="sendRequest">
+    <h2>Examination Request</h2>
+    <form action="/patient/sendRequest" method="post">
+      <label for="doctorName">doctor name</label>
+      <input type="text" name="doctorName" required>
+
+      <label for="date"></label>
+      <input type="date" name="date" required>
+
+      <button type="submit">send</button>
+    </form>
+  </div>
 
   <!-- You don’t need to install socket.io-client in the client-side environment because the Socket.IO server serves the
   client library at /socket.io/socket.io.js. -->

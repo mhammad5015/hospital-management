@@ -23,17 +23,26 @@ const routes = require("./routes/routes");
 app.use(routes);
 
 app.use(globalErrorHandler);
+const models = require("./models/index");
 
 server = app.listen(port, "localhost", () => console.log("listening on port " + port));
 // socket.io implementation:
 const io = require("./socket").init(server);
 io.on("connection", socket => {
     console.log("A client connected");
-
-    socket.on("message", (data) => {
-        console.log(data.text);
-        socket.emit("encriptedMessage", { "message": data.text });
-    });
+    socket.on("examinationRequest", async (data) => {
+        let { doctorName, date } = data;
+        let doctor = await models.User.findOne({ where: { userName: doctorName } })
+        if (!doctor) {
+            io.emit("examinationResponse", { message: `doctor not found`, statusCode: 400 })
+            return;
+        }
+        if (doctor.isDoctor == false) {
+            io.emit("examinationResponse", { message: `the user is not a doctor`, statusCode: 400 })
+            return
+        }
+        io.emit("examinationResponse", { message: `doctor ${doctorName} is available at ${date}`, statusCode: 200 })
+    })
     socket.on("disconnect", () => {
         console.log("Client disconnected");
     });
