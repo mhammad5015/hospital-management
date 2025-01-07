@@ -9,6 +9,7 @@ const globalErrorHandler = require("./controllers/errorController");
 const cookieParser = require("cookie-parser");
 const CryptoJS = require("crypto-js")
 const forge = require('node-forge');
+const crypto = require("crypto");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -29,11 +30,11 @@ const models = require("./models/index");
 
 server = app.listen(port, "localhost", () => console.log("listening on port " + port));
 
-function encryptAES(data) {
-    return CryptoJS.AES.encrypt(JSON.stringify(data), process.env.ENCRYPTION_KEY).toString();
+function encryptAES(data, symmetricKey) {
+    return CryptoJS.AES.encrypt(JSON.stringify(data), symmetricKey).toString();
 }
-function decryptAES(ciphertext) {
-    const bytes = CryptoJS.AES.decrypt(ciphertext, process.env.ENCRYPTION_KEY);
+function decryptAES(ciphertext, symmetricKey) {
+    const bytes = CryptoJS.AES.decrypt(ciphertext, symmetricKey);
     return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 }
 // Generate RSA key pair
@@ -56,13 +57,27 @@ io.on("connection", socket => {
     console.log("A client connected");
     // Send the public key to the clients for encryption
     socket.emit("serverPublicKeyPem", publicKeyPem);
+
     let clientPublicKey;
     socket.on("clientPublicKeyPem", async (clientPublicKeyPem) => {
         clientPublicKey = await forge.pki.publicKeyFromPem(clientPublicKeyPem);
+        try {
+            // Initialize the client public key
+            clientPublicKey = forge.pki.publicKeyFromPem(clientPublicKeyPem);
+
+            // Generate session key and encrypt it using the client's public key
+            socket.sessionKey = crypto.randomBytes(32).toString("hex");
+            const encryptedSessionKey = encryptRSA(clientPublicKey, socket.sessionKey);
+            // Send the encrypted session key to the client
+            socket.emit("sessionKey", encryptedSessionKey);
+        } catch (error) {
+            console.error("Error handling client public key:", error);
+        }
     });
+
     socket.on("examinationRequest", async (encryptedData) => {
         try {
-            const data = await decryptAES(encryptedData);
+            const data = await decryptAES(encryptedData, process.env.ENCRYPTION_KEY);
             const { doctorName, date } = data;
             let doctor = await models.User.findOne({ where: { userName: doctorName } });
             let response;
@@ -73,19 +88,19 @@ io.on("connection", socket => {
             } else {
                 response = { message: `Doctor ${doctorName} is available at ${date}`, statusCode: 200 };
             }
-            const encryptedResponse = await encryptAES(response);
+            const encryptedResponse = await encryptAES(response, process.env.ENCRYPTION_KEY);
             io.emit("examinationResponse", encryptedResponse);
         } catch (error) {
             console.error("Error processing request:", error);
         }
     });
 
+
     socket.on("sendMedicalHistory", async (encryptedMessage) => {
-        const decryptedData = await decryptRSA(encryptedMessage);
+        const decryptedData = await decryptAES(encryptedMessage, socket.sessionKey);
         const { diseases, surgeries, medications } = decryptedData;
-        console.log('Decrypted Message on Server:', decryptedData);
         let response = { message: "Medical History received successfully", statusCode: 200 };
-        let encryptedResponse = encryptRSA(clientPublicKey, response);
+        let encryptedResponse = encryptAES(response, socket.sessionKey);
         io.emit("medicalHistoryResponse", encryptedResponse)
     });
 

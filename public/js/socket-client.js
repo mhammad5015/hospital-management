@@ -1,11 +1,11 @@
 const socket = io("http://localhost:7000");
 
-const ENCRYPTION_KEY = "83c359a79e5b1adf0dc3921c00000000";
-function encryptAES(data) {
-    return CryptoJS.AES.encrypt(JSON.stringify(data), ENCRYPTION_KEY).toString();
+const SYMMETRIC_KEY = "83c359a79e5b1adf0dc3921c00000000";
+function encryptAES(data, symmetricKey) {
+    return CryptoJS.AES.encrypt(JSON.stringify(data), symmetricKey).toString();
 }
-function decryptAES(ciphertext) {
-    const bytes = CryptoJS.AES.decrypt(ciphertext, ENCRYPTION_KEY);
+function decryptAES(ciphertext, symmetricKey) {
+    const bytes = CryptoJS.AES.decrypt(ciphertext, symmetricKey);
     return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 }
 
@@ -19,7 +19,7 @@ sendRequestForm.addEventListener('submit', (event) => {
         doctorName: doctorName,
         date: date,
     };
-    const encryptedData = encryptAES(data);
+    const encryptedData = encryptAES(data, SYMMETRIC_KEY);
     socket.emit('examinationRequest', encryptedData);
     alert('Examination request sent successfully!');
 });
@@ -27,7 +27,7 @@ sendRequestForm.addEventListener('submit', (event) => {
 // Listen for encrypted examinationResponse
 socket.on("examinationResponse", (encryptedData) => {
     try {
-        const data = decryptAES(encryptedData);
+        const data = decryptAES(encryptedData, SYMMETRIC_KEY);
         alert(data.message);
     } catch (error) {
         console.error("Error decrypting response:", error);
@@ -54,6 +54,11 @@ socket.on("serverPublicKeyPem", (serverPublicKeyPem) => {
     serverPublicKey = forge.pki.publicKeyFromPem(serverPublicKeyPem);
 });
 
+let sessionKey;
+socket.on("sessionKey", async (encryptedSessionKey) => {
+    sessionKey = await decryptRSA(encryptedSessionKey);
+});
+
 const sendMedicalHistoryForm = document.querySelector(".sendMedicalHistory");
 sendMedicalHistoryForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -65,14 +70,14 @@ sendMedicalHistoryForm.addEventListener("submit", async (event) => {
         surgeries: surgeries,
         medications: medications,
     };
-    const encryptedBase64 = await encryptRSA(serverPublicKey, data);
-    socket.emit('sendMedicalHistory', encryptedBase64);
+    const encryptedData = await encryptAES(data, sessionKey);
+    socket.emit('sendMedicalHistory', encryptedData);
     alert('Medical history sent successfully!');
 });
 
 socket.on("medicalHistoryResponse", async (encryptedData) => {
     try {
-        const data = await decryptRSA(encryptedData);
+        const data = await decryptAES(encryptedData, sessionKey);
         alert(data.message);
     } catch (error) {
         console.error("Error decrypting response:", error);
