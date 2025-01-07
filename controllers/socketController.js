@@ -5,8 +5,8 @@ const crypto = require("crypto");
 
 const { generateRSAKeys, encryptRSA, decryptRSA } = require("../util/security/rsaHelper");
 const { encryptAES, decryptAES } = require("../util/security/aesHelper");
-const examinationController = require("./symetricController");
-const medicalController = require("./pgpController");
+const symetricController = require("./symetricController");
+const pgpController = require("./pgpController");
 
 const keys = generateRSAKeys();
 let privateKey = keys.privateKey;
@@ -34,11 +34,11 @@ exports.handleSocket = (socket) => {
     });
 
     socket.on("examinationRequest", (encryptedData) =>
-        examinationController.handleRequest(socket, encryptedData)
+        symetricController.handleRequest(socket, encryptedData)
     );
 
     socket.on("sendMedicalHistory", (encryptedData) =>
-        medicalController.handleMedicalHistory(socket, encryptedData)
+        pgpController.handleMedicalHistory(socket, encryptedData)
     );
 
     socket.on("disconnect", () => {
