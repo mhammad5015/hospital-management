@@ -1,13 +1,15 @@
+const { Server } = require("socket.io");
 let io;
 
 module.exports = {
     init: httpServer => {
-        io = require("socket.io")(httpServer)
+        io = new Server(httpServer);
+        io.on("connection", require("./controllers/socketController").handleSocket);
         return io;
     },
     getIO: () => {
         if (!io) {
-            throw new Error("Socket.IO has not been initialized")
+            throw new Error("Socket.IO not initialized")
         }
         return io
     }
