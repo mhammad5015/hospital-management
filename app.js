@@ -8,12 +8,13 @@ const rateLimiter = require("./middlewares/rateLimiter");
 const globalErrorHandler = require("./controllers/errorController");
 const cookieParser = require("cookie-parser");
 const CryptoJS = require("crypto-js")
+const forge = require('node-forge');
 
 const app = express();
 const port = process.env.PORT || 3000;
 app.use(bodyParser.urlencoded({ extended: false })); //basically tells the system whether you want to use a simple algorithm for shallow parsig (i.e. false) or complex algorithm for deep parsing that can deal with nested objects (i.e. true).
 app.use(bodyParser.json()); // basically tells the system that you want json to be used.
-app.use(express.static(path.join(__dirname, "public"))); // to access the public folder from any where in the application
+app.use(express.static(path.join(__dirname, "public")));
 app.use(cors(corsOptions));
 app.use(rateLimiter);
 app.set("view engine", "ejs");
@@ -28,21 +29,40 @@ const models = require("./models/index");
 
 server = app.listen(port, "localhost", () => console.log("listening on port " + port));
 
-const ENCRYPTION_KEY = "your-secret-key";
-function encrypt(data) {
-    return CryptoJS.AES.encrypt(JSON.stringify(data), ENCRYPTION_KEY).toString();
+function encryptAES(data) {
+    return CryptoJS.AES.encrypt(JSON.stringify(data), process.env.ENCRYPTION_KEY).toString();
 }
-function decrypt(ciphertext) {
-    const bytes = CryptoJS.AES.decrypt(ciphertext, ENCRYPTION_KEY);
+function decryptAES(ciphertext) {
+    const bytes = CryptoJS.AES.decrypt(ciphertext, process.env.ENCRYPTION_KEY);
     return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 }
-// socket.io implementation:
+// Generate RSA key pair
+const { privateKey, publicKey } = forge.pki.rsa.generateKeyPair(2048);
+// Convert keys to PEM format for transmission/storage
+const publicKeyPem = forge.pki.publicKeyToPem(publicKey);
+const privateKeyPem = forge.pki.privateKeyToPem(privateKey);
+const encryptRSA = (publicKey, message) => {
+    const encrypted = publicKey.encrypt(JSON.stringify(message), 'RSA-OAEP');
+    const encryptedBase64 = forge.util.encode64(encrypted);
+    return encryptedBase64;
+};
+// Decrypt data received from the client
+function decryptRSA(encryptedData) {
+    const decrypted = privateKey.decrypt(forge.util.decode64(encryptedData), 'RSA-OAEP');
+    return JSON.parse(decrypted);
+}
 const io = require("./socket").init(server);
 io.on("connection", socket => {
     console.log("A client connected");
+    // Send the public key to the clients for encryption
+    socket.emit("serverPublicKeyPem", publicKeyPem);
+    let clientPublicKey;
+    socket.on("clientPublicKeyPem", async (clientPublicKeyPem) => {
+        clientPublicKey = await forge.pki.publicKeyFromPem(clientPublicKeyPem);
+    });
     socket.on("examinationRequest", async (encryptedData) => {
         try {
-            const data = decrypt(encryptedData); // Decrypt the incoming data
+            const data = await decryptAES(encryptedData);
             const { doctorName, date } = data;
             let doctor = await models.User.findOne({ where: { userName: doctorName } });
             let response;
@@ -53,11 +73,20 @@ io.on("connection", socket => {
             } else {
                 response = { message: `Doctor ${doctorName} is available at ${date}`, statusCode: 200 };
             }
-            const encryptedResponse = encrypt(response); // Encrypt the response
+            const encryptedResponse = await encryptAES(response);
             io.emit("examinationResponse", encryptedResponse);
         } catch (error) {
             console.error("Error processing request:", error);
         }
+    });
+
+    socket.on("sendMedicalHistory", async (encryptedMessage) => {
+        const decryptedData = await decryptRSA(encryptedMessage);
+        const { diseases, surgeries, medications } = decryptedData;
+        console.log('Decrypted Message on Server:', decryptedData);
+        let response = { message: "Medical History received successfully", statusCode: 200 };
+        let encryptedResponse = encryptRSA(clientPublicKey, response);
+        io.emit("medicalHistoryResponse", encryptedResponse)
     });
 
     socket.on("disconnect", () => {

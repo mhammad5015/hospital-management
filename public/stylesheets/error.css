@@ -1,0 +1,41 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #f0f0f0;
+}
+
+.error-container {
+  margin: 100px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.error-title {
+  font-size: 36px;
+  color: #d9534f;
+  margin-bottom: 20px;
+}
+
+.error-message {
+  font-size: 18px;
+  color: #777;
+  margin-bottom: 20px;
+}
+
+.error-details {
+  font-size: 14px;
+  color: #999;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #d9534f;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+}

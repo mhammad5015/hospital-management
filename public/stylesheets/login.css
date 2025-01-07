@@ -16,7 +16,7 @@ h1 {
 form {
   display: flex;
   flex-direction: column;
-  width: 300px; /* Adjusted width for a more compact login form */
+  width: 300px;
   margin: 0 auto;
   padding: 20px;
   border: 1px solid #ddd;
@@ -30,7 +30,6 @@ label {
 
 input[type="text"],
 input[type="password"] {
-  width: 100%;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 3px;

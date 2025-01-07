@@ -5,8 +5,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hospital Management | Home</title>
+  <!-- crypto-js cdn -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"
     integrity="sha512-a+SUDuwNzXDvz4XrIcXHuCf089/iJAoN4lmrXJg18XnduKK6YlDHNRalv4yd1N40OKI80tFidF+rqTFKGPoWFQ=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- node-forg cdn -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/forge/1.3.1/forge.min.js"
+    integrity="sha512-95iy0RZIbw3H/FgfAj2wnCQJlzFQ+eaSfUeV/l8WVyGHKSRMzm3M/O+85j9ba/HFphkijrCTDjcuDX0BL2lthA=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 
@@ -19,12 +24,30 @@
 
   <div class="sendRequest">
     <h2>Examination Request</h2>
-    <form action="/patient/sendRequest" method="post">
+    <form action="" method="post">
       <label for="doctorName">doctor name</label>
       <input type="text" name="doctorName" required>
 
       <label for="date"></label>
       <input type="date" name="date" required>
+
+      <button type="submit">send</button>
+    </form>
+  </div>
+
+  <br>
+
+  <div class="sendMedicalHistory">
+    <h2>Medical History</h2>
+    <form action="" method="post">
+      <label for="diseases">Chronic diseases</label>
+      <input type="text" name="diseases" required>
+
+      <label for="surgeries">Previous surgeries</label>
+      <input type="text" name="surgeries" required>
+
+      <label for="medications">Regularly used medications</label>
+      <input type="text" name="medications" required>
 
       <button type="submit">send</button>
     </form>
