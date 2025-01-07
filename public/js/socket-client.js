@@ -39,13 +39,17 @@ const { privateKey, publicKey } = forge.pki.rsa.generateKeyPair(2048);
 const privateKeyPem = forge.pki.privateKeyToPem(privateKey);
 const publicKeyPem = forge.pki.publicKeyToPem(publicKey);
 let serverPublicKey;
+socket.emit("clientPublicKeyPem", publicKeyPem);
 // Encrypt with the server's public key
-const encryptWithPublicKey = (publicKey, message) => {
-    const encrypted = publicKey.encrypt(message, 'RSA-OAEP');
+const encryptRSA = (publicKey, message) => {
+    const encrypted = publicKey.encrypt(JSON.stringify(message), 'RSA-OAEP');
     const encryptedBase64 = forge.util.encode64(encrypted);
-    console.log("Encrypted Message:", encryptedBase64);
     return encryptedBase64;
 };
+function decryptRSA(encryptedData) {
+    const decrypted = privateKey.decrypt(forge.util.decode64(encryptedData), 'RSA-OAEP');
+    return JSON.parse(decrypted);
+}
 socket.on("serverPublicKeyPem", (serverPublicKeyPem) => {
     serverPublicKey = forge.pki.publicKeyFromPem(serverPublicKeyPem);
 });
@@ -61,11 +65,17 @@ sendMedicalHistoryForm.addEventListener("submit", async (event) => {
         surgeries: surgeries,
         medications: medications,
     };
-    const encryptedBase64 = await encryptWithPublicKey(serverPublicKey, JSON.stringify(data));
+    const encryptedBase64 = await encryptRSA(serverPublicKey, data);
     socket.emit('sendMedicalHistory', encryptedBase64);
     alert('Medical history sent successfully!');
 });
 
-socket.on("medicalHistoryResponse", (data) => {
-    alert(data.message);
+socket.on("medicalHistoryResponse", async (encryptedData) => {
+    try {
+        const data = await decryptRSA(encryptedData);
+        alert(data.message);
+    } catch (error) {
+        console.error("Error decrypting response:", error);
+    }
 });
+
