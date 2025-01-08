@@ -1,4 +1,8 @@
 import socket from "./socket-client.js";
+// Generate client's RSA key pair
+const { privateKey, publicKey } = forge.pki.rsa.generateKeyPair(2048);
+const privateKeyPem = forge.pki.privateKeyToPem(privateKey);
+const publicKeyPem = forge.pki.publicKeyToPem(publicKey);
 
 function encryptAES(data, symmetricKey) {
     return CryptoJS.AES.encrypt(JSON.stringify(data), symmetricKey).toString();
@@ -8,11 +12,6 @@ function decryptAES(ciphertext, symmetricKey) {
     return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 }
 
-// Generate client's RSA key pair
-const { privateKey, publicKey } = forge.pki.rsa.generateKeyPair(2048);
-const privateKeyPem = forge.pki.privateKeyToPem(privateKey);
-const publicKeyPem = forge.pki.publicKeyToPem(publicKey);
-let serverPublicKey;
 socket.emit("clientPublicKeyPem", publicKeyPem);
 // Encrypt with the server's public key
 const encryptRSA = (publicKey, message) => {
@@ -24,6 +23,8 @@ function decryptRSA(encryptedData) {
     const decrypted = privateKey.decrypt(forge.util.decode64(encryptedData), 'RSA-OAEP');
     return JSON.parse(decrypted);
 }
+
+let serverPublicKey;
 socket.on("serverPublicKeyPem", (serverPublicKeyPem) => {
     serverPublicKey = forge.pki.publicKeyFromPem(serverPublicKeyPem);
 });

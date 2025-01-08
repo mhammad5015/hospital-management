@@ -5,6 +5,7 @@ const crypto = require("crypto");
 
 const { generateRSAKeys, encryptRSA, decryptRSA } = require("../util/security/rsaHelper");
 const { encryptAES, decryptAES } = require("../util/security/aesHelper");
+const { signMessage, verifyMessage } = require("../util/security/digitalSignatureHelper");
 const symetricController = require("./symetricController");
 const pgpController = require("./pgpController");
 
@@ -22,6 +23,7 @@ exports.handleSocket = (socket) => {
     let clientPublicKey;
     socket.on("clientPublicKeyPem", async (clientPublicKeyPem) => {
         try {
+            socket.clientPublicKeyPem = clientPublicKeyPem;
             clientPublicKey = forge.pki.publicKeyFromPem(clientPublicKeyPem);
             // Generate session key and encrypt it using the client's public key
             socket.sessionKey = crypto.randomBytes(32).toString("hex");
@@ -40,6 +42,11 @@ exports.handleSocket = (socket) => {
     socket.on("sendMedicalHistory", (encryptedData) =>
         pgpController.handleMedicalHistory(socket, encryptedData)
     );
+
+    socket.on("sendAppointmentConfirmation", (all) => {
+        const isVerified = verifyMessage(all.message, all.signature, socket.clientPublicKeyPem);
+        console.log("Is the signature valid?", isVerified);
+    })
 
     socket.on("disconnect", () => {
         console.log("Client disconnected");

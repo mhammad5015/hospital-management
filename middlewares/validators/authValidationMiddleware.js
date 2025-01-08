@@ -1,6 +1,5 @@
 const { validationResult, check } = require("express-validator");
 const models = require("../../models/index");
-const fs = require("fs");
 
 const userRegisterValidation = [
   check("userName", "User name is required")
