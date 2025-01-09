@@ -1,4 +1,5 @@
 const forge = require('node-forge');
+const crypto = require('crypto');
 
 function issueCertificate(csrPem, CA_PrivateKeyPem, CA_CertificatePem) {
     try {
@@ -11,7 +12,7 @@ function issueCertificate(csrPem, CA_PrivateKeyPem, CA_CertificatePem) {
         const CA_Certificate = forge.pki.certificateFromPem(CA_CertificatePem);
 
         const certificate = forge.pki.createCertificate();
-        certificate.serialNumber = "01";
+        certificate.serialNumber = generateUniqueSerialNumber();
         certificate.validity.notBefore = new Date();
         certificate.validity.notAfter = new Date();
         certificate.validity.notAfter.setFullYear(certificate.validity.notBefore.getFullYear() + 1);
@@ -41,7 +42,7 @@ function generateCACertificate() {
     CA_Certificate.publicKey = caKeys.publicKey;
     CA_Certificate.setSubject([{ name: 'commonName', value: 'Syrian Ministry of Health' }]);
     CA_Certificate.setIssuer(CA_Certificate.subject.attributes);
-    CA_Certificate.serialNumber = '01';
+    CA_Certificate.serialNumber = generateUniqueSerialNumber();
     CA_Certificate.validity.notBefore = new Date();
     CA_Certificate.validity.notAfter = new Date();
     CA_Certificate.validity.notAfter.setFullYear(CA_Certificate.validity.notBefore.getFullYear() + 5);
@@ -51,6 +52,10 @@ function generateCACertificate() {
         privateKeyPem: forge.pki.privateKeyToPem(caKeys.privateKey),
         certificatePem: forge.pki.certificateToPem(CA_Certificate),
     };
+}
+
+function generateUniqueSerialNumber() {
+    return crypto.randomBytes(16).toString('hex'); // Generates a 128-bit unique serial number
 }
 
 module.exports = {
