@@ -1,8 +1,6 @@
-import socket from "./socket-client.js"
+import clientData from './socket-client.js';
 
-const { privateKey, publicKey } = forge.pki.rsa.generateKeyPair(2048);
-const privateKeyPem = forge.pki.privateKeyToPem(privateKey);
-const publicKeyPem = forge.pki.publicKeyToPem(publicKey);
+const { socket, privateKeyPem, publicKeyPem, publicKey, privateKey } = clientData;
 
 socket.emit("clientPublicKeyPem", publicKeyPem);
 
