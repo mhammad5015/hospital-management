@@ -1,4 +1,5 @@
 require("dotenv").config();
+const fs = require("fs");
 const models = require("../models/index");
 const forge = require('node-forge');
 const crypto = require("crypto");
@@ -9,11 +10,18 @@ const { signMessage, verifyMessage } = require("../util/security/digitalSignatur
 const symetricController = require("./symetricController");
 const pgpController = require("./pgpController");
 
-const keys = generateRSAKeys();
-let privateKey = keys.privateKey;
-let publicKey = keys.publicKey;
-let publicKeyPem = keys.publicKeyPem;
-let privateKeyPem = keys.privateKeyPem;
+let privateKey, publicKey, publicKeyPem, privateKeyPem;
+const publicKeyPath = '../hospital-management/public.key';
+const privateKeyPath = '../hospital-management/private.key';
+try {
+    publicKeyPem = fs.readFileSync(publicKeyPath, 'utf-8');
+    publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
+    privateKeyPem = fs.readFileSync(privateKeyPath, 'utf-8');
+    privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
+} catch (err) {
+    console.error('Error reading key file:', err);
+}
+
 
 exports.handleSocket = (socket) => {
     console.log("A client connected");
