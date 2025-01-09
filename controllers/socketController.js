@@ -9,6 +9,7 @@ const { encryptAES, decryptAES } = require("../util/security/aesHelper");
 const { signMessage, verifyMessage } = require("../util/security/digitalSignatureHelper");
 const symetricController = require("./symetricController");
 const pgpController = require("./pgpController");
+const { emit } = require("process");
 
 let privateKey, publicKey, publicKeyPem, privateKeyPem;
 const publicKeyPath = '../hospital-management/public.key';
@@ -21,6 +22,56 @@ try {
 } catch (err) {
     console.error('Error reading key file:', err);
 }
+
+
+
+function issueCertificate(csrPem, caPrivateKeyPem, caCertificatePem) {
+    try {
+        const csr = forge.pki.certificationRequestFromPem(csrPem);
+        if (!csr.verify()) {
+            throw new Error("CSR verification failed.");
+        }
+
+        // Verify doctor's identity by issuing a challenge (e.g., solve a math problem)
+        const challenge = "Solve 2 + 2 * 5";
+        const correctAnswer = "12"; // Hardcoded for simplicity, replace with dynamic checks
+
+        // After doctor solves the challenge correctly, issue the certificate
+        const caPrivateKey = forge.pki.privateKeyFromPem(caPrivateKeyPem);
+        const caCertificate = forge.pki.certificateFromPem(caCertificatePem);
+
+        const certificate = forge.pki.createCertificate();
+        certificate.serialNumber = "01";
+        certificate.validity.notBefore = new Date();
+        certificate.validity.notAfter = new Date();
+        certificate.validity.notAfter.setFullYear(certificate.validity.notBefore.getFullYear() + 1);
+
+        certificate.setSubject(csr.subject.attributes);
+        certificate.setIssuer(caCertificate.subject.attributes);
+        certificate.publicKey = csr.publicKey;
+
+        certificate.sign(caPrivateKey);
+
+        return forge.pki.certificateToPem(certificate);
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+// CA's key pair and self-signed certificate (pre-generated)
+const caKeys = forge.pki.rsa.generateKeyPair(2048);
+const caCertificate = forge.pki.createCertificate();
+caCertificate.publicKey = caKeys.publicKey;
+caCertificate.setSubject([{ name: 'commonName', value: 'Syrian Ministry of Health' }]);
+caCertificate.setIssuer(caCertificate.subject.attributes);
+caCertificate.serialNumber = '01';
+caCertificate.validity.notBefore = new Date();
+caCertificate.validity.notAfter = new Date();
+caCertificate.validity.notAfter.setFullYear(caCertificate.validity.notBefore.getFullYear() + 5);
+caCertificate.sign(caKeys.privateKey);
+
+const caPrivateKeyPem = forge.pki.privateKeyToPem(caKeys.privateKey);
+const caCertificatePem = forge.pki.certificateToPem(caCertificate);
 
 
 exports.handleSocket = (socket) => {
@@ -54,6 +105,17 @@ exports.handleSocket = (socket) => {
     socket.on("sendAppointmentConfirmation", (all) => {
         const isVerified = verifyMessage(all.message, all.signature, socket.clientPublicKeyPem);
         console.log("Is the signature valid?", isVerified);
+        socket.emit("appointmentConfirmationResponse", `Is the signature valid? ${isVerified}`);
+    })
+
+    // CA Verifies CSR and Issues Certificate
+    socket.on("CSR", (csrPem) => {
+        const issuedCertificatePem = issueCertificate(csrPem, caPrivateKeyPem, caCertificatePem);
+        console.log("Issued Certificate:\n", issuedCertificatePem);
+        const csr = forge.pki.certificateFromPem(issuedCertificatePem);
+        // certification request content
+        console.log(csr.subject.attributes);
+        socket.emit("CSR_response", "Certificate Issued successfully.")
     })
 
     socket.on("disconnect", () => {

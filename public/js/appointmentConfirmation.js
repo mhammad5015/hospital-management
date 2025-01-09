@@ -20,6 +20,14 @@ sendAppointmentConfirmationForm.addEventListener("submit", (event) => {
     alert('Appointment Confirmation sent successfully!');
 })
 
+socket.on("appointmentConfirmationResponse", (data) => {
+    try {
+        alert(data);
+    } catch (error) {
+        console.error("Error decrypting response:", error);
+    }
+})
+
 function signMessage(message, privateKeyPem) {
     const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
     // Hash the message using SHA-256
