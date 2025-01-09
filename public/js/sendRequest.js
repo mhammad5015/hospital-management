@@ -1,4 +1,5 @@
-import socket from "./socket-client.js";
+import clientData from './socket-client.js';
+const { socket, privateKeyPem, publicKeyPem, publicKey, privateKey } = clientData;
 
 const SYMMETRIC_KEY = "83c359a79e5b1adf0dc3921c00000000";
 function encryptAES(data, symmetricKey) {

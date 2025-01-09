@@ -1,8 +1,6 @@
-import socket from "./socket-client.js";
-// Generate client's RSA key pair
-const { privateKey, publicKey } = forge.pki.rsa.generateKeyPair(2048);
-const privateKeyPem = forge.pki.privateKeyToPem(privateKey);
-const publicKeyPem = forge.pki.publicKeyToPem(publicKey);
+import clientData from './socket-client.js';
+
+const { socket, privateKeyPem, publicKeyPem, publicKey, privateKey } = clientData;
 
 function encryptAES(data, symmetricKey) {
     return CryptoJS.AES.encrypt(JSON.stringify(data), symmetricKey).toString();
