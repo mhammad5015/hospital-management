@@ -36,12 +36,58 @@ function generateCSR(clientInfo) {
         throw error;
     }
 }
-
-socket.on("CSR_response", async (data) => {
+// Handle the CSR response with a math challenge
+socket.on("CSR_response", (data) => {
     try {
-        // const data = await decryptAES(encryptedData, sessionKey);
-        alert(data);
+        alert(data.message);
+        // Assuming data contains a math operation, e.g., "5 + 3"
+        const mathDiv = document.createElement("div");
+        mathDiv.className = "mathChallenge";
+        mathDiv.innerHTML = `
+            <h3>Solve this challenge:</h3>
+            <p>${data.operation}</p>
+            <form class="mathForm">
+                <label for="mathAnswer">Answer:</label>
+                <input type="number" id="mathAnswer" required>
+                <button type="submit">Submit Answer</button>
+            </form>
+        `;
+        document.body.appendChild(mathDiv);
+
+        const mathForm = mathDiv.querySelector(".mathForm");
+        mathForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const answer = document.querySelector("#mathAnswer").value;
+            socket.emit("math_result", Number(answer));
+            mathDiv.remove(); // Remove the math challenge after submission
+            alert("Answer sent to the server!");
+        });
     } catch (error) {
-        console.error("Error decrypting response:", error);
+        console.error("Error handling math challenge:", error);
+    }
+});
+
+socket.on("result_status", (data) => {
+    try {
+        alert(data.message)
+        if (data.certificate !== null) {
+            // Select or create a container for the certificate
+            let certificateDiv = document.querySelector("#certificateContainer");
+            if (!certificateDiv) {
+                // Create the container if it doesn't exist
+                certificateDiv = document.createElement("div");
+                certificateDiv.id = "certificateContainer";
+                document.body.appendChild(certificateDiv);
+            }
+
+            // Update the container with the certificate
+            certificateDiv.innerHTML = `
+                <h3>Generated Certificate</h3>
+                <pre>${data.certificate}</pre>
+            `;
+        }
+
+    } catch (error) {
+        console.log("Error in result_status:", error);
     }
 })

@@ -7,6 +7,7 @@ const crypto = require("crypto");
 const { generateRSAKeys, encryptRSA, decryptRSA } = require("../util/security/rsaHelper");
 const { encryptAES, decryptAES } = require("../util/security/aesHelper");
 const { signMessage, verifyMessage } = require("../util/security/digitalSignatureHelper");
+const { generateMathOperation, solveMathOperation } = require("../util/math");
 const symetricController = require("./symetricController");
 const pgpController = require("./pgpController");
 
@@ -63,13 +64,23 @@ exports.handleSocket = (socket) => {
 
     // CA Verifies CSR and Issues Certificate
     socket.on("CSR", (csrPem) => {
-        const issuedCertificatePem = issueCertificate(csrPem, CA_PrivateKey, CA_Certificate);
-        console.log("Issued Certificate:\n", issuedCertificatePem);
-        const csr = forge.pki.certificateFromPem(issuedCertificatePem);
-        // certification request content
-        // console.log(csr.subject.attributes);
-        socket.emit("CSR_response", "Certificate Issued successfully.")
+        socket.csrPem = csrPem;
+        socket.operation = generateMathOperation();
+        socket.emit("CSR_response", { operation: socket.operation, message: "CSR recived successfully.\nsolve the following chalange please.." });
     })
+
+    socket.on("math_result", (answer) => {
+        const correctAnswer = solveMathOperation(socket.operation);
+        if (answer === correctAnswer) {
+            const issuedCertificatePem = issueCertificate(socket.csrPem, CA_PrivateKey, CA_Certificate);
+            console.log("Issued Certificate:\n", issuedCertificatePem);
+            // certification request content
+            // console.log(csr.subject.attributes);
+            socket.emit("result_status", { message: "Correct! CSR processed.\nCertificate generated successfully.", certificate: issuedCertificatePem });
+        } else {
+            socket.emit("result_status", { message: "Incorrect answer. Try again.", certificate: null });
+        }
+    });
 
     socket.on("disconnect", () => {
         console.log("Client disconnected");
