@@ -84,12 +84,11 @@ socket.on("CSR_response", (data) => {
             </form>
         `;
         document.body.appendChild(mathDiv);
-
         const mathForm = mathDiv.querySelector(".mathForm");
         mathForm.addEventListener("submit", (e) => {
             e.preventDefault();
             const answer = document.querySelector("#mathAnswer").value;
-            socket.emit("math_result", Number(answer));
+            socket.emit("mathChalange", Number(answer));
             mathDiv.remove(); // Remove the math challenge after submission
             alert("Answer sent to the server!");
         });
@@ -98,7 +97,7 @@ socket.on("CSR_response", (data) => {
     }
 });
 
-socket.on("result_status", (data) => {
+socket.on("chalangeStatus", (data) => {
     try {
         alert(data.message)
         if (data.certificate !== null) {
@@ -110,14 +109,12 @@ socket.on("result_status", (data) => {
                 certificateDiv.id = "certificateContainer";
                 document.body.appendChild(certificateDiv);
             }
-
             // Update the container with the certificate
             certificateDiv.innerHTML = `
                 <h3>Generated Certificate</h3>
                 <pre>${data.certificate}</pre>
             `;
         }
-
     } catch (error) {
         console.log("Error in result_status:", error);
     }
