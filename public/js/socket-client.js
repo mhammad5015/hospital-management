@@ -4,6 +4,8 @@ const { privateKey, publicKey } = forge.pki.rsa.generateKeyPair(2048);
 const privateKeyPem = forge.pki.privateKeyToPem(privateKey);
 const publicKeyPem = forge.pki.publicKeyToPem(publicKey);
 
+socket.emit("registerUser", userName);
+
 export default {
     socket,
     privateKeyPem,

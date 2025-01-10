@@ -6,8 +6,13 @@ function encryptAES(data, symmetricKey) {
     return CryptoJS.AES.encrypt(JSON.stringify(data), symmetricKey).toString();
 }
 function decryptAES(ciphertext, symmetricKey) {
-    const bytes = CryptoJS.AES.decrypt(ciphertext, symmetricKey);
-    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    try {
+        const bytes = CryptoJS.AES.decrypt(ciphertext, symmetricKey);
+        return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    } catch (error) {
+        throw new Error("Encrypt failed:\n" + error);
+    }
+
 }
 
 // Send encrypted examinationRequest
@@ -29,8 +34,18 @@ sendRequestForm.addEventListener('submit', (event) => {
 socket.on("examinationResponse", (encryptedData) => {
     try {
         const data = decryptAES(encryptedData, SYMMETRIC_KEY);
+        console.log(data.message);
         alert(data.message);
     } catch (error) {
-        console.error("Error decrypting response:", error);
+        console.error("Error decrypting response:\n", error);
     }
 });
+
+socket.on("appointmentConfirmationResault", (data) => {
+    try {
+        alert(`the appointment resault is: ${data.status}.\nthe required tests are:\n${data.requiredTests}.`)
+        console.log(`the appointment resault is ${data.status}.\nthe required tests are:\n${data.requiredTests}.`);
+    } catch (error) {
+        console.log("Error decrypting response:\n", error);
+    }
+})

@@ -1,6 +1,15 @@
 import clientData from './socket-client.js';
 
 const { socket, privateKeyPem, publicKeyPem, publicKey, privateKey } = clientData;
+const SYMMETRIC_KEY = "83c359a79e5b1adf0dc3921c00000000";
+
+function encryptAES(data, symmetricKey) {
+    return CryptoJS.AES.encrypt(JSON.stringify(data), symmetricKey).toString();
+}
+function decryptAES(ciphertext, symmetricKey) {
+    const bytes = CryptoJS.AES.decrypt(ciphertext, symmetricKey);
+    return JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+}
 
 socket.emit("clientPublicKeyPem", publicKeyPem);
 
@@ -8,13 +17,18 @@ const sendAppointmentConfirmationForm = document.querySelector(".appointmentConf
 sendAppointmentConfirmationForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const requiredTests = document.querySelector('[name="requiredTests"]').value;
+    const patientName = document.querySelector('[name="patientName"]').value;
+    const status = document.querySelector('[name="status"]').value;
     const data = {
+        patientName: patientName,
         requiredTests: requiredTests,
+        status: status
     };
     const signature = signMessage(data, privateKeyPem);
     const all = {
         signature: signature,
-        message: data
+        // message: data
+        data: data
     }
     socket.emit('sendAppointmentConfirmation', all);
     alert('Appointment Confirmation sent successfully!');
@@ -53,3 +67,13 @@ function verifyMessage(message, signatureBase64, publicKeyPem) {
     const isValid = publicKey.verify(md.digest().bytes(), signature);
     return isValid;
 }
+
+socket.on("getExaminationReq", (encryptedData) => {
+    try {
+        const data = decryptAES(encryptedData, SYMMETRIC_KEY);
+        alert(data.message);
+        console.log(`Examination Request from ${data.username} at ${data.date}`);
+    } catch (error) {
+        console.error("Error decrypting response:\n", error);
+    }
+})

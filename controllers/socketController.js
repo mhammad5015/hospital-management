@@ -10,6 +10,7 @@ const { signMessage, verifyMessage } = require("../util/security/digitalSignatur
 const { generateMathOperation, solveMathOperation } = require("../util/math");
 const symetricController = require("./symetricController");
 const pgpController = require("./pgpController");
+const io = require("../socket").getIO();
 
 let privateKey, publicKey, publicKeyPem, privateKeyPem;
 const publicKeyPath = '../hospital-management/public.key';
@@ -28,10 +29,16 @@ const CA = generateCACertificate();
 const CA_Certificate = CA.certificatePem;
 const CA_PrivateKey = CA.privateKeyPem;
 
+const userSocketMap = new Map();  // Map to store username → socket.id
 exports.handleSocket = (socket) => {
-    console.log("A client connected");
     // Send the public key to the clients for encryption
     socket.emit("serverPublicKeyPem", publicKeyPem);
+
+    socket.on("registerUser", (username) => {
+        socket.userName = username;
+        userSocketMap.set(username, socket.id); // username → socket.id
+        console.log(`${username} registered with socket ID: ${socket.id}`);
+    });
 
     let clientPublicKey;
     socket.on("clientPublicKeyPem", async (clientPublicKeyPem) => {
@@ -49,7 +56,7 @@ exports.handleSocket = (socket) => {
     });
 
     socket.on("examinationRequest", (encryptedData) =>
-        symetricController.handleRequest(socket, encryptedData)
+        symetricController.handleRequest(socket, encryptedData, userSocketMap)
     );
 
     socket.on("sendMedicalHistory", (encryptedData) =>
@@ -57,9 +64,15 @@ exports.handleSocket = (socket) => {
     );
 
     socket.on("sendAppointmentConfirmation", (all) => {
-        const isVerified = verifyMessage(all.message, all.signature, socket.clientPublicKeyPem);
-        console.log("Is the signature valid?", isVerified);
-        socket.emit("appointmentConfirmationResponse", `Is the signature valid? ${isVerified}`);
+        const isVerified = verifyMessage(all.data, all.signature, socket.clientPublicKeyPem);
+        console.log("Client signature is valid?", isVerified);
+        const patientSocketId = userSocketMap.get(all.data.patientName);
+        if (patientSocketId) {
+            io.to(patientSocketId).emit("appointmentConfirmationResault", all.data);
+        } else {
+            socket.emit("appointmentConfirmationResponse", `Patient is not connected`);
+        }
+        socket.emit("appointmentConfirmationResponse", `Client signature is valid? ${isVerified}`);
     })
 
     // CA Verifies CSR and Issues Certificate
@@ -83,6 +96,12 @@ exports.handleSocket = (socket) => {
     });
 
     socket.on("disconnect", () => {
-        console.log("Client disconnected");
+        for (let [username, socketId] of userSocketMap.entries()) {
+            if (socketId === socket.id) {
+                userSocketMap.delete(username);  // Remove disconnected user
+                console.log(`${username} disconnected`);
+                break;
+            }
+        }
     });
 }
