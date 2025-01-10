@@ -49,6 +49,22 @@
     </form>
   </div>
 
+  <div class="CSRForm">
+    <h2>Send Certificate Signing Request</h2>
+    <form action="">
+      <label for="commonName">Common Name</label>
+      <input type="text" name="commonName" required>
+
+      <label for="organizationName">Organization Name</label>
+      <input type="text" name="organizationName" required value="Syrian Medical Center">
+
+      <label for="countryName">Country Name</label>
+      <input type="text" name="countryName" required value="SY">
+
+      <button type="submit">send</button>
+    </form>
+  </div>
+
   <script>
     const userName = "<%= user.userName %>";
   </script>

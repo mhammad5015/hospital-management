@@ -82,16 +82,16 @@ exports.handleSocket = (socket) => {
         socket.emit("CSR_response", { operation: socket.operation, message: "CSR recived successfully.\nsolve the following chalange please.." });
     })
 
-    socket.on("math_result", (answer) => {
+    socket.on("mathChalange", (answer) => {
         const correctAnswer = solveMathOperation(socket.operation);
         if (answer === correctAnswer) {
             const issuedCertificatePem = issueCertificate(socket.csrPem, CA_PrivateKey, CA_Certificate);
             console.log("Issued Certificate:\n", issuedCertificatePem);
             // certification request content
             // console.log(csr.subject.attributes);
-            socket.emit("result_status", { message: "Correct! CSR processed.\nCertificate generated successfully.", certificate: issuedCertificatePem });
+            socket.emit("chalangeStatus", { message: "Correct! CSR processed.\nCertificate generated successfully.", certificate: issuedCertificatePem });
         } else {
-            socket.emit("result_status", { message: "Incorrect answer. Try again.", certificate: null });
+            socket.emit("chalangeStatus", { message: "Incorrect answer. Try again.", certificate: null });
         }
     });
 
