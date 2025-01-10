@@ -5,10 +5,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hospital Management | Home</title>
+  <!-- crypto-js cdn -->
+  <script src="lib/crypto-js.min.js"></script>
   <!-- node-forg cdn -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/forge/1.3.1/forge.min.js"
-    integrity="sha512-95iy0RZIbw3H/FgfAj2wnCQJlzFQ+eaSfUeV/l8WVyGHKSRMzm3M/O+85j9ba/HFphkijrCTDjcuDX0BL2lthA=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="lib/forge.min.js"></script>
 </head>
 
 <body>
@@ -20,8 +20,17 @@
   <div class="appointmentConfirmation">
     <h2>Appointment Confirmation</h2>
     <form action="">
-      <label for=" requiredTests">Required tests</label>
+      <label for="patientName">Patient Name</label>
+      <input type="text" name="patientName" required>
+
+      <label for="requiredTests">Required tests</label>
       <input type="text" name="requiredTests" required>
+
+      <label for="status">status</label>
+      <select name="status" required>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
 
       <button type="submit">send</button>
     </form>
@@ -43,12 +52,14 @@
     </form>
   </div>
 
+  <script>
+    const userName = "<%= user.userName %>";
+  </script>
   <!-- You don’t need to install socket.io-client in the client-side environment because the Socket.IO server serves the
   client library at /socket.io/socket.io.js. -->
   <script src="/socket.io/socket.io.js"></script>
   <script type="module" src="/js/socket-client.js"></script>
-  <script type="module" src="/js/appointmentConfirmation.js"></script>
-  <script type="module" src="/js/CA.js"></script>
+  <script type="module" src="/js/doctor.js"></script>
 </body>
 
 </html>
