@@ -1,7 +1,55 @@
 import clientData from './socket-client.js';
-
+import { SYMMETRIC_KEY, encryptAES, decryptAES } from './helper/aesHelperClient.js';
+import { signMessage, verifyMessage } from './helper/digitalSignatureHelperClient.js'
+import { generateCSR } from './helper/certificateHelperClient.js'
 const { socket, privateKeyPem, publicKeyPem, publicKey, privateKey } = clientData;
 
+socket.emit("clientPublicKeyPem", publicKeyPem);
+
+// =====================================================================================
+// Appointment Confirmation
+// =====================================================================================
+const sendAppointmentConfirmationForm = document.querySelector(".appointmentConfirmation");
+sendAppointmentConfirmationForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const requiredTests = document.querySelector('[name="requiredTests"]').value;
+    const patientName = document.querySelector('[name="patientName"]').value;
+    const status = document.querySelector('[name="status"]').value;
+    const data = {
+        patientName: patientName,
+        requiredTests: requiredTests,
+        status: status
+    };
+    const signature = signMessage(data, privateKeyPem);
+    const all = {
+        signature: signature,
+        // message: data
+        data: data
+    }
+    socket.emit('sendAppointmentConfirmation', all);
+    alert('Appointment Confirmation sent successfully!');
+})
+
+socket.on("appointmentConfirmationResponse", (data) => {
+    try {
+        alert(data);
+    } catch (error) {
+        console.error("Error decrypting response:", error);
+    }
+})
+
+socket.on("getExaminationReq", (encryptedData) => {
+    try {
+        const data = decryptAES(encryptedData, SYMMETRIC_KEY);
+        alert(data.message);
+        console.log(`Examination Request from ${data.username} at ${data.date}`);
+    } catch (error) {
+        console.error("Error decrypting response:\n", error);
+    }
+})
+// =====================================================================================
+// Certificate
+// =====================================================================================
 const CSRForm = document.querySelector(".CSRForm");
 CSRForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -13,29 +61,12 @@ CSRForm.addEventListener("submit", async (event) => {
         organizationName: organizationName,
         countryName: countryName,
     };
-    const csrPem = await generateCSR(clientInfo);
+    const csrPem = await generateCSR(clientInfo, publicKey, privateKey);
     socket.emit("CSR", csrPem);
     console.log("client csrPem:\n" + csrPem);
     alert('CSR sent successfully!');
 });
-function generateCSR(clientInfo) {
-    try {
-        const csr = forge.pki.createCertificationRequest();
-        csr.publicKey = publicKey;
-        csr.setSubject([
-            { name: 'commonName', value: clientInfo.commonName },
-            { name: 'organizationName', value: clientInfo.organizationName },
-            { name: 'countryName', value: clientInfo.countryName },
-        ]);
-        csr.sign(privateKey);
-        const csrPem = forge.pki.certificationRequestToPem(csr);
-        return csrPem;
-    } catch (error) {
-        console.error("Error generating CSR:", error);
-        alert("Failed to generate CSR.");
-        throw error;
-    }
-}
+
 // Handle the CSR response with a math challenge
 socket.on("CSR_response", (data) => {
     try {
