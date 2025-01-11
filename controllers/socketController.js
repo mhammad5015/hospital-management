@@ -95,6 +95,23 @@ exports.handleSocket = (socket) => {
         }
     });
 
+    socket.on("sendFinalRequest", async (data) => {
+        const message = await decryptRSA(privateKey, data.encryptedMessage);
+        const isValid = validateCertificate(data.certificatePem, CA_Certificate);
+        if (isValid == true) {
+            const cert = forge.pki.certificateFromPem(data.certificatePem);
+            const publicKeyPem = forge.pki.publicKeyToPem(cert.publicKey);
+            if (socket.clientPublicKeyPem == publicKeyPem) {
+                const isVerified = verifyMessage(message, data.signedMessage, publicKeyPem);
+                socket.emit("sendFinalResponse", `Client signature is valid? ${isVerified}`);
+            } else {
+                socket.emit("sendFinalResponse", "the public key is not the same as the certificate");
+            }
+        } else {
+            socket.emit("sendFinalResponse", "the certificate is not valid");
+        }
+    });
+
     socket.on("disconnect", () => {
         for (let [username, socketId] of userSocketMap.entries()) {
             if (socketId === socket.id) {

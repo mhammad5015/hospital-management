@@ -2,6 +2,7 @@ import clientData from './socket-client.js';
 import { SYMMETRIC_KEY, encryptAES, decryptAES } from './helper/aesHelperClient.js';
 import { signMessage, verifyMessage } from './helper/digitalSignatureHelperClient.js'
 import { generateCSR } from './helper/certificateHelperClient.js'
+import { generateRSAKeys, encryptRSA, decryptRSA } from './helper/rsaHelperClient.js';
 const { socket, privateKeyPem, publicKeyPem, publicKey, privateKey } = clientData;
 
 socket.emit("clientPublicKeyPem", publicKeyPem);
@@ -97,10 +98,12 @@ socket.on("CSR_response", (data) => {
     }
 });
 
+let certificatePem;
 socket.on("chalangeStatus", (data) => {
     try {
         alert(data.message)
         if (data.certificate !== null) {
+            certificatePem = data.certificate;
             // Select or create a container for the certificate
             let certificateDiv = document.querySelector("#certificateContainer");
             if (!certificateDiv) {
@@ -117,5 +120,34 @@ socket.on("chalangeStatus", (data) => {
         }
     } catch (error) {
         console.log("Error in result_status:", error);
+    }
+})
+// =====================================================================================
+// Digital Certificates, RSA Encryption, and Digital Signatures
+// =====================================================================================
+let serverPublicKey;
+socket.on("serverPublicKeyPem", (serverPublicKeyPem) => {
+    serverPublicKey = forge.pki.publicKeyFromPem(serverPublicKeyPem);
+    const sendFinalRequestForm = document.querySelector(".sendFinalRequest");
+    sendFinalRequestForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const message = document.querySelector('[name="message"]').value;
+        const encryptedMessage = encryptRSA(serverPublicKey, message)
+        const signedMessage = signMessage(message, privateKeyPem);
+        const reqData = {
+            encryptedMessage: encryptedMessage,
+            signedMessage: signedMessage,
+            certificatePem: certificatePem
+        }
+        socket.emit("sendFinalRequest", reqData);
+        alert('message sent successfully!');
+    });
+});
+
+socket.on("sendFinalResponse", (data) => {
+    try {
+        alert(data);
+    } catch (error) {
+        console.log("error with reciving" + error);
     }
 })
